@@ -16,20 +16,18 @@ void setup() {
   delay(1000);
   Serial.println("=== Sensor Test ===");
 
-  // BH1750 - custom I2C pins (SDA=22, SCL=23)
-  Wire.begin(22, 23); // SDA, SCL
+  Wire.begin(22, 23);
   if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
     Serial.println("[BH1750]  OK");
   } else {
     Serial.println("[BH1750]  FAILED - check wiring");
   }
 
-  // DHT22
   dht.begin();
   Serial.println("[DHT22]   OK");
 
-  // LM393 (digital input)
-  pinMode(LM393_PIN, INPUT);
+  // INPUT_PULLUP prevents the pin from floating, which causes false HIGHs
+  pinMode(LM393_PIN, INPUT_PULLUP);
   Serial.println("[LM393]   OK");
 
   Serial.println("-------------------");
@@ -48,13 +46,17 @@ void loop() {
 
   // --- DHT22 ---
   float humidity    = dht.readHumidity();
-  float temperature = dht.readTemperature(); // Celsius
-  if (isnan(humidity) || isnan(temperature)) {
+  float tempC       = dht.readTemperature();        // Celsius
+  float tempF       = dht.readTemperature(true);    // Fahrenheit (pass true)
+
+  if (isnan(humidity) || isnan(tempC) || isnan(tempF)) {
     Serial.println("[DHT22]   Read error - check wiring");
   } else {
     Serial.print("[DHT22]   Temp: ");
-    Serial.print(temperature);
-    Serial.print(" C  |  Humidity: ");
+    Serial.print(tempC);
+    Serial.print(" C  |  ");
+    Serial.print(tempF);
+    Serial.print(" F  |  Humidity: ");
     Serial.print(humidity);
     Serial.println(" %");
   }
@@ -62,7 +64,7 @@ void loop() {
   // --- LM393 ---
   int lm393State = digitalRead(LM393_PIN);
   Serial.print("[LM393]   Signal: ");
-  Serial.println(lm393State == HIGH ? "HIGH (no trigger)" : "LOW (triggered)");
+  Serial.println(lm393State == LOW ? "LIGHT DETECTED (triggered)" : "NO LIGHT (no trigger)");
 
   Serial.println("-------------------");
   delay(2000);
